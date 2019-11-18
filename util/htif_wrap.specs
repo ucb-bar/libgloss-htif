@@ -1,0 +1,9 @@
+%rename link htif_wrap_link
+
+# Replace libc functions with custom implementations from libgloss_htif
+*link:
+%(htif_wrap_link) \
+    --wrap=puts \
+    --wrap=printf \
+    --wrap=sprintf \
+    --wrap=snprintf

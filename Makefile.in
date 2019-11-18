@@ -1,0 +1,193 @@
+# @configure_input@
+
+SHELL := /bin/sh
+.DEFAULT_GOAL := libgloss
+
+prefix := @prefix@
+exec_prefix := @exec_prefix@
+libdir := @libdir@
+
+srcdir := @srcdir@
+builddir := @builddir@
+
+CC := @CC@
+AR := @AR@
+SIZE := @SIZE@
+
+CFLAGS ?= @CFLAGS@ -std=c11 -pedantic -Wall
+CPPFLAGS ?= @CPPFLAGS@
+LDFLAGS ?= @LDFLAGS@
+
+multilib := @MULTILIB@
+
+libgloss_c_srcs := \
+	misc/tls.c \
+	misc/main.c \
+	misc/htif.c \
+	sys/nanosleep.c \
+	sys/access.c \
+	sys/chdir.c \
+	sys/chmod.c \
+	sys/chown.c \
+	sys/close.c \
+	sys/execve.c \
+	sys/exit.c \
+	sys/faccessat.c \
+	sys/fork.c \
+	sys/fstat.c \
+	sys/fstatat.c \
+	sys/ftime.c \
+	sys/getcwd.c \
+	sys/getpid.c \
+	sys/gettimeofday.c \
+	sys/isatty.c \
+	sys/kill.c \
+	sys/link.c \
+	sys/lseek.c \
+	sys/lstat.c \
+	sys/open.c \
+	sys/openat.c \
+	sys/read.c \
+	sys/sbrk.c \
+	sys/stat.c \
+	sys/sysconf.c \
+	sys/times.c \
+	sys/unlink.c \
+	sys/utime.c \
+	sys/wait.c \
+	sys/write.c \
+	libc/stdio/vxprintf.c \
+	libc/stdio/printf.c \
+	libc/stdio/sprintf.c \
+	libc/stdio/snprintf.c \
+	libc/stdio/puts.c \
+	libc/stdio/printbuf.c
+
+libgloss_asm_srcs := \
+	misc/crt0.S \
+	misc/init.S
+
+libgloss_hdrs := \
+	$(wildcard $(srcdir)/include/*.h) \
+	$(wildcard $(srcdir)/libc/stdio/*.h)
+
+specs_newlib := $(srcdir)/util/htif.specs
+specs_nano := $(srcdir)/util/htif_nano.specs
+specs_wrap := $(srcdir)/util/htif_wrap.specs
+
+libgloss_lds := $(srcdir)/util/htif.ld
+
+# Additional files to install
+libgloss_data := \
+	$(specs_newlib) \
+	$(specs_nano) \
+	$(specs_wrap) \
+	$(libgloss_lds)
+
+libgloss_CFLAGS := $(CFLAGS) -fno-common -fno-builtin -mcmodel=medany
+libgloss_CPPFLAGS := $(CPPFLAGS) -I $(srcdir)/include
+
+libgloss_libs :=
+libgloss_objs :=
+libgloss_install :=
+
+# $(1): subdirectory
+# $(2): variable uniquifier
+# $(3): additional compiler flags
+define libgloss
+
+libgloss$(2)_c_objs := $$(addprefix $$(builddir)/$(1)/,$$(libgloss_c_srcs:.c=.o))
+libgloss$(2)_asm_objs := $$(addprefix $$(builddir)/$(1)/,$$(libgloss_asm_srcs:.S=.o))
+libgloss$(2)_lib := $$(builddir)/$(1)/libgloss_htif.a
+
+$$(libgloss$(2)_c_objs): $$(builddir)/$(1)/%.o: $$(srcdir)/%.c $$(libgloss_hdrs)
+	@mkdir -p $$(dir $$@)
+	$$(CC) $$(libgloss_CFLAGS) $(3) $$(libgloss_CPPFLAGS) -c -o $$@ $$<
+
+$$(libgloss$(2)_asm_objs): $$(builddir)/$(1)/%.o: $$(srcdir)/%.S $$(libgloss_hdrs)
+	@mkdir -p $$(dir $$@)
+	$$(CC) $$(libgloss_CFLAGS) $(3) $$(libgloss_CPPFLAGS) -D__ASSEMBLY__ -c -o $$@ $$<
+
+$$(libgloss$(2)_lib): $$(libgloss$(2)_c_objs) $$(libgloss$(2)_asm_objs)
+	$$(AR) rcs $$@ $$^
+
+.PHONY: libgloss($2)_install
+libgloss$(2)_install: $$(libgloss$(2)_lib) $$(libgloss_data)
+	install -m 644 -p -D -t $$(libdir)/$(1)/ $$^
+
+libgloss_objs += $$(libgloss$(2)_c_objs) $$(libgloss$(2)_asm_objs)
+libgloss_libs += $$(libgloss$(2)_lib)
+libgloss_install += libgloss$(2)_install
+
+endef
+
+define libgloss_multilib
+$(eval arch := $(patsubst %/,%,$(dir $(1))))
+$(eval abi := $(notdir $(1)))
+$(call libgloss,$(1),_$(arch)_$(abi),-march=$(arch) -mabi=$(abi))
+endef
+
+$(eval $(call libgloss))
+$(foreach subdir,$(multilib),$(eval $(call libgloss_multilib,$(subdir))))
+
+.PHONY: libgloss
+libgloss: $(libgloss_libs)
+
+# Verify that libdir is part of the compiler library search paths
+searchdirs = $(shell $(CC) -print-search-dirs | sed -n '/^libraries: =/{s///;s/:/ /g;p;}')
+
+.PHONY: install
+install: $(libgloss_install)
+	$(if $(filter $(realpath $(libdir)),\
+		$(foreach d,$(call searchdirs),$(realpath $(d)))),,\
+		$(error libdir is not in $(CC) library search path: $(libdir)))
+
+
+#
+# Test programs
+#
+
+hello_src := $(srcdir)/tests/hello.c
+
+hello_bin_newlib := hello.riscv
+hello_bin_nano := hello.nano.riscv
+hello_bin_pico := hello.pico.riscv
+hello_bins := $(hello_bin_newlib) $(hello_bin_nano) $(hello_bin_pico)
+
+
+# NOTE: htif.ld must be symlinked to the current working directory to
+# bypass a spec file limitation that causes gcc to search only the
+# default library path for the linker script.
+htif.ld: $(libgloss_lds)
+	ln -s $< $@
+
+LDFLAGS += -L $(builddir)
+
+# Manual equivalent:
+# 	$(CC) $(CFLAGS) -mcmodel=medany -nostdlib -nostartfiles -T htif.ld \
+# 		hello.c -Wl,--start-group -lc -lgloss_htif -Wl,--end-group -lgcc
+#
+$(hello_bin_newlib): $(hello_src) $(libgloss_lib) $(specs_newlib) htif.ld
+	$(CC) $(CFLAGS) -specs=$(specs_newlib) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $<
+	$(SIZE) $@
+
+$(hello_bin_nano): $(hello_src) $(libgloss_lib) $(specs_nano) htif.ld
+	$(CC) $(CFLAGS) -specs=$(specs_nano) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $<
+	$(SIZE) $@
+
+# Demonstrate using GNU ld's --wrap feature to replace newlib functions
+# with more compact alternatives implemented by libgloss_htif
+$(hello_bin_pico): $(hello_src) $(libgloss_lib) $(specs_nano) $(specs_wrap) htif.ld
+	$(CC) $(CFLAGS) -specs=$(specs_nano) -specs=$(specs_wrap) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $<
+	$(SIZE) $@
+
+.PHONY: check
+check: $(hello_bins)
+
+
+.PHONY: clean
+clean:
+	rm -f -- $(libgloss_libs) $(libgloss_objs) $(hello_bins) $(addsuffix .map,$(hello_bins))
+
+# Disable built-in suffix rules
+.SUFFIXES:

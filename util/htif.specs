@@ -1,0 +1,26 @@
+# Equivalent to gcc options:
+# -mcmodel=medany -Wl,--start-group -lc -lgloss_htif -Wl,--end-group -lgcc -static -nostartfiles -T htif.ld
+
+%rename cc1 htif_cc1
+%rename lib htif_lib
+%rename link htif_link
+%rename startfile htif_startfile
+%rename endfile htif_endfile
+
+*cc1:
+%(htif_cc1) -mcmodel=medany
+
+*lib:
+--start-group -lc %{!specs=nosys.specs:-lgloss_htif} --end-group
+
+# FIXME: %T sequence is not used to specify a linker script since it
+# does not search the current working directory
+*link:
+%(htif_link) %:replace-outfile(-lgloss -lgloss_htif) -T htif.ld%s -static
+
+*startfile:
+
+
+*endfile:
+
+
