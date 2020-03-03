@@ -86,3 +86,14 @@ defaults to a busy loop.
 Multi-threaded programs should either override this function or alias
 `__main` with `main` to force a common entry point:
 `-Wl,--defsym=__main=main`.
+
+## Exception handling
+
+A custom exception handler can be implemented by overriding the
+`handle_trap()` function, which should match the following signature:
+
+```C
+uintptr_t handle_trap(uintptr_t epc, uintptr_t cause, uintptr_t tval, uintptr_t regs[32])
+```
+
+The return value sets the new `mepc` for returning from the exception.

@@ -21,6 +21,7 @@ LDFLAGS ?= @LDFLAGS@
 multilib := @MULTILIB@
 
 libgloss_c_srcs := \
+	misc/traps.c \
 	misc/tls.c \
 	misc/main.c \
 	misc/htif.c \
