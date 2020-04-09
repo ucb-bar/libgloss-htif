@@ -10,6 +10,7 @@ static spinlock_t htif_lock = SPINLOCK_INIT;
 
 void htif_syscall(uintptr_t arg)
 {
+    arg = HTIF_TOHOST(0, 0, arg);
     spin_lock(&htif_lock);
     tohost = arg;
     while (fromhost == 0);
