@@ -25,6 +25,7 @@ libgloss_c_srcs := \
 	misc/tls.c \
 	misc/main.c \
 	misc/htif.c \
+	misc/fdt.c \
 	sys/nanosleep.c \
 	sys/access.c \
 	sys/chdir.c \

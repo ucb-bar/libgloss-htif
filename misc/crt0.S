@@ -25,8 +25,9 @@ _start:
     li x7, 0
     li x8, 0
     li x9, 0
-    li x10, 0
-    li x11, 0
+    /* Retain a0 and a1 passed by bootrom */
+//  li x10, 0
+//  li x11, 0
     li x12, 0
     li x13, 0
     li x14, 0
@@ -116,6 +117,9 @@ _start:
     la t0, trap_entry
     csrw mtvec, t0
 
+    /* Preserve DTB pointer */
+    mv s2, a1
+
     /* Initialize TLS */
     call __init_tls
 
@@ -123,6 +127,10 @@ _start:
     la t0, __boot_hart
     la s1, __boot_sync
     bne s0, t0, 1f
+
+2:  /* Store DTB pointer */
+    auipc t0, %pcrel_hi(__dtb)
+    SREG s2, %pcrel_lo(2b)(t0)
 
     /* Call global constructors */
     la a0, __libc_fini_array
@@ -251,3 +259,8 @@ name:
     .align 2
 __boot_sync:
     .word 0
+
+    .global __dtb
+    .align 3
+__dtb:
+    .dc.a 0
