@@ -51,6 +51,47 @@ _start:
     li t0, (MSTATUS_FS | MSTATUS_XS)
     csrs mstatus, t0
 
+#ifdef __riscv_flen
+    /* Initialze FPU if present */
+    la t0, 1f
+    csrw mtvec, t0
+
+    fssr zero
+    fmv.s.x f0,  zero
+    fmv.s.x f1,  zero
+    fmv.s.x f2,  zero
+    fmv.s.x f3,  zero
+    fmv.s.x f4,  zero
+    fmv.s.x f5,  zero
+    fmv.s.x f6,  zero
+    fmv.s.x f7,  zero
+    fmv.s.x f8,  zero
+    fmv.s.x f9,  zero
+    fmv.s.x f10, zero
+    fmv.s.x f11, zero
+    fmv.s.x f12, zero
+    fmv.s.x f13, zero
+    fmv.s.x f14, zero
+    fmv.s.x f15, zero
+    fmv.s.x f16, zero
+    fmv.s.x f17, zero
+    fmv.s.x f18, zero
+    fmv.s.x f19, zero
+    fmv.s.x f20, zero
+    fmv.s.x f21, zero
+    fmv.s.x f22, zero
+    fmv.s.x f23, zero
+    fmv.s.x f24, zero
+    fmv.s.x f25, zero
+    fmv.s.x f26, zero
+    fmv.s.x f27, zero
+    fmv.s.x f28, zero
+    fmv.s.x f29, zero
+    fmv.s.x f30, zero
+    fmv.s.x f31, zero
+1:
+#endif
+
     /* Initialize global pointer; disable relaxation to avoid relaxing
        the address calculation to "addi gp, gp, 0" */
     .option push
