@@ -116,6 +116,9 @@ SECTIONS
     . = ALIGN (4K);
     PROVIDE (__heap_end = .);
 
+    . = 0x80010000;
+    .payload : { *(.payload) }
+
     /* Place Thread Control Block (TCB) at bottom of hart stack */
     PROVIDE (__tcb_size = __tbss_end - __tdata_start);
     PROVIDE (__stack_align = MAX (ALIGNOF (.tdata), 0x10));
