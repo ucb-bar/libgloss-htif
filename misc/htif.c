@@ -8,12 +8,22 @@ volatile uint64_t fromhost __attribute__ ((section (".htif")));
 
 static spinlock_t htif_lock = SPINLOCK_INIT;
 
-void htif_syscall(uintptr_t arg)
+long htif_syscall(uint64_t a0, uint64_t a1, uint64_t a2, unsigned long n)
 {
-    arg = HTIF_TOHOST(0, 0, arg);
+    volatile uint64_t buf[8];
+    uint64_t sc;
+
+    buf[0] = n;
+    buf[1] = a0;
+    buf[2] = a1;
+    buf[3] = a2;
+
+    sc = HTIF_TOHOST(0, 0, (uintptr_t)&buf);
     spin_lock(&htif_lock);
-    tohost = arg;
+    tohost = sc;
     while (fromhost == 0);
     fromhost = 0;
     spin_unlock(&htif_lock);
+
+    return buf[0];
 }
