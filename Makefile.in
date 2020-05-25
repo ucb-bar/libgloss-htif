@@ -66,15 +66,19 @@ libgloss_c_srcs := \
 
 libgloss_asm_srcs := \
 	misc/crt0.S \
+	misc/crtmain.S \
+	misc/crtmain-argv.S \
 	misc/init.S
 
 libgloss_hdrs := \
 	$(wildcard $(srcdir)/include/*.h) \
+	$(wildcard $(srcdir)/misc/*.h) \
 	$(wildcard $(srcdir)/libc/stdio/*.h)
 
 specs_newlib := $(srcdir)/util/htif.specs
 specs_nano := $(srcdir)/util/htif_nano.specs
 specs_wrap := $(srcdir)/util/htif_wrap.specs
+specs_argv := $(srcdir)/util/htif_argv.specs
 
 libgloss_lds := $(srcdir)/util/htif.ld
 
@@ -83,6 +87,7 @@ libgloss_data := \
 	$(specs_newlib) \
 	$(specs_nano) \
 	$(specs_wrap) \
+	$(specs_argv) \
 	$(libgloss_lds)
 
 libgloss_CFLAGS := $(CFLAGS) -fno-common -fno-builtin -mcmodel=medany
@@ -153,8 +158,13 @@ hello_src := $(srcdir)/tests/hello.c
 hello_bin_newlib := hello.riscv
 hello_bin_nano := hello.nano.riscv
 hello_bin_pico := hello.pico.riscv
-hello_bins := $(hello_bin_newlib) $(hello_bin_nano) $(hello_bin_pico)
+hello_bin_argv := hello.argv.riscv
 
+hello_bins := \
+	$(hello_bin_newlib) \
+	$(hello_bin_nano) \
+	$(hello_bin_pico) \
+	$(hello_bin_argv)
 
 # NOTE: htif.ld must be symlinked to the current working directory to
 # bypass a spec file limitation that causes gcc to search only the
@@ -180,6 +190,11 @@ $(hello_bin_nano): $(hello_src) $(libgloss_lib) $(specs_nano) htif.ld
 # with more compact alternatives implemented by libgloss_htif
 $(hello_bin_pico): $(hello_src) $(libgloss_lib) $(specs_nano) $(specs_wrap) htif.ld
 	$(CC) $(CFLAGS) -specs=$(specs_nano) -specs=$(specs_wrap) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $<
+	$(SIZE) $@
+
+# Demonstrate support for passing command-line arguments from fesvr
+$(hello_bin_argv): $(hello_src) $(libgloss_lib) $(specs_nano) $(specs_argv) htif.ld
+	$(CC) $(CFLAGS) -specs=$(specs_nano) -specs=$(specs_argv) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $<
 	$(SIZE) $@
 
 .PHONY: check

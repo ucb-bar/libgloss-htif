@@ -1,14 +1,5 @@
+#include "asm.h"
 #include "encoding.h"
-
-#if __riscv_xlen == 64
-# define LREG ld
-# define SREG sd
-# define REGBYTES 8
-#else
-# define LREG lw
-# define SREG sw
-# define REGBYTES 4
-#endif
 
     .section .text.init
     .global _start
@@ -121,32 +112,15 @@ _start:
 
     /* Skip global initialization if not the designated boot hart */
     la t0, __boot_hart
-    la s1, __boot_sync
-    bne s0, t0, 1f
+    bne s0, t0, _start_secondary
 
     /* Call global constructors */
     la a0, __libc_fini_array
     call atexit
     call __libc_init_array
 
-    /* Set __boot_sync flag */
-    li t0, -1
-    sw t0, (s1)
-
-    .macro enter func
-    li a0, 1    /* argc = 1 */
-    la a1, argv /* argv = { "chipyard", NULL } */
-    la a2, envp /* envp = { NULL } */
-    call \func
-    tail exit
-    .endm
-
-    enter main
-
-1:  /* Synchronize secondary harts */
-    lw t0, (s1)
-    beqz t0, 1b
-    enter __main
+    /* Call main function */
+    tail _start_main
 
     .cfi_endproc
 
@@ -236,18 +210,3 @@ trap_entry:
     LREG x2, 2*REGBYTES(sp)
 
     mret
-
-
-    .section .rodata
-    .align 3
-argv:
-    .dc.a name
-envp:
-    .dc.a 0
-name:
-    .asciz "chipyard"
-
-    .section .data
-    .align 2
-__boot_sync:
-    .word 0
