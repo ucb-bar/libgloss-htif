@@ -153,53 +153,42 @@ install: $(libgloss_install)
 # Test programs
 #
 
+check_bins := # test binaries
+
+# $(1): output file
+# $(2): source files
+# $(3): spec files
+define check
+check_bins += $(1)
+
+$(1): LDFLAGS += -L $$(builddir)
+$(1): $(2) $$(libgloss_lib) $$(libgloss_lds) $(3)
+	$$(CC) $$(CFLAGS) $(foreach f,$(3),-specs=$(f)) $$(LDFLAGS) \
+		-T $$(libgloss_lds) -Wl,-Map=$$@.map -o $$@ $(2)
+	$$(SIZE) $$@
+endef
+
 hello_src := $(srcdir)/tests/hello.c
-
-hello_bin_newlib := hello.riscv
-hello_bin_nano := hello.nano.riscv
-hello_bin_pico := hello.pico.riscv
-hello_bin_argv := hello.argv.riscv
-
-hello_bins := \
-	$(hello_bin_newlib) \
-	$(hello_bin_nano) \
-	$(hello_bin_pico) \
-	$(hello_bin_argv)
-
-# NOTE: htif.ld must be symlinked to the current working directory to
-# bypass a spec file limitation that causes gcc to search only the
-# default library path for the linker script.
-htif.ld: $(libgloss_lds)
-	ln -s $< $@
-
-LDFLAGS += -L $(builddir)
 
 # Manual equivalent:
 # 	$(CC) $(CFLAGS) -mcmodel=medany -nostdlib -nostartfiles -T htif.ld \
 # 		hello.c -Wl,--start-group -lc -lgloss_htif -Wl,--end-group -lgcc
 #
-$(hello_bin_newlib): $(hello_src) $(libgloss_lib) $(specs_newlib) htif.ld
-	$(CC) $(CFLAGS) -specs=$(specs_newlib) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $<
-	$(SIZE) $@
+$(eval $(call check,hello.riscv,$(hello_src),$(specs_newlib)))
 
-$(hello_bin_nano): $(hello_src) $(libgloss_lib) $(specs_nano) htif.ld
-	$(CC) $(CFLAGS) -specs=$(specs_nano) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $<
-	$(SIZE) $@
+# Demonstrate use of newlib-nano
+$(eval $(call check,hello.nano.riscv,$(hello_src),$(specs_nano)))
 
 # Demonstrate using GNU ld's --wrap feature to replace newlib functions
 # with more compact alternatives implemented by libgloss_htif
-$(hello_bin_pico): $(hello_src) $(libgloss_lib) $(specs_nano) $(specs_wrap) htif.ld
-	$(CC) $(CFLAGS) -specs=$(specs_nano) -specs=$(specs_wrap) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $<
-	$(SIZE) $@
+$(eval $(call check,hello.pico.riscv,$(hello_src),$(specs_nano) $(specs_wrap)))
 
 # Demonstrate support for passing command-line arguments from fesvr
-$(hello_bin_argv): $(hello_src) $(libgloss_lib) $(specs_nano) $(specs_argv) htif.ld
-	$(CC) $(CFLAGS) -specs=$(specs_nano) -specs=$(specs_argv) $(LDFLAGS) -Wl,-Map=$@.map -o $@ $<
-	$(SIZE) $@
+$(eval $(call check,hello.argv.riscv,$(hello_src),$(specs_nano) $(specs_argv)))
+
 
 .PHONY: check
-check: $(hello_bins)
-
+check: $(check_bins)
 
 .PHONY: clean
 clean:
