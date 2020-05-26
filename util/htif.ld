@@ -101,11 +101,13 @@ SECTIONS
     PROVIDE (_edata = .);
 
     .bss : ALIGN (8) {
+        PROVIDE_HIDDEN (__bss_start = .);
         *(.sbss .sbss.*)
         *(.gnu.linkonce.sb.*)
         *(.bss .bss.*)
         *(.gnu.linkonce.b.*)
         *(COMMON)
+        PROVIDE_HIDDEN (__bss_end = .);
     }
 
     . = ALIGN (8);

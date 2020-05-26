@@ -114,6 +114,16 @@ _start:
     la t0, __boot_hart
     bne s0, t0, _start_secondary
 
+    /* Zero BSS segment */
+    la t0, __bss_start
+    la t1, __bss_end
+    bgeu t0, t1, 2f
+1:
+    SREG zero, (t0)
+    addi t0, t0, REGBYTES
+    bltu t0, t1, 1b
+2:
+
     /* Call global constructors */
     la a0, __libc_fini_array
     call atexit
