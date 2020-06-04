@@ -12,7 +12,9 @@ typedef struct {
 static inline void spin_lock(spinlock_t *lock)
 {
     do {
-        while (atomic_read(&lock->lock));
+#ifdef __riscv_atomic
+        while (atomic_load(&lock->lock));
+#endif
     } while (atomic_swap_acquire(&lock->lock, -1));
 }
 

@@ -48,6 +48,7 @@ Spec File | Description
 [`htif.specs`](util/htif.ld) | Link with newlib
 [`htif_nano.specs`](util/htif_nano.specs) | Link with newlib-nano
 [`htif_wrap.specs`](util/htif_wrap.specs) | Switch to minimal stdio implementation
+[`htif_argv.specs`](util/htif_argv.specs) | Retrieve `argv` from fesvr
 
     $ riscv64-unknown-elf-gcc -O2 -specs=htif.specs -o hello tests/hello.c
 
@@ -58,6 +59,15 @@ This depends on the `--wrap` feature of GNU ld and is intended to be
 used in conjuction with the other newlib spec files.
 
     $ riscv64-unknown-elf-gcc -O2 -specs=htif_nano.specs -specs=htif_wrap.specs -o hello tests/hello.c
+
+`htif_argv.specs` adds extra initialization code to retrieve
+command-line arguments from the frontend server.  The program will exit
+with an error (typically `ENOMEM`) if the number or length of the
+argument strings exceeds the fixed buffer size set by `ARG_MAX`.
+If this feature is omitted, `argv` defaults to a static array with no
+arguments.
+
+    $ riscv64-unknown-elf-gcc -O2 -specs=htif_nano.specs -specs=htif_argv.specs -o hello tests/hello.c
 
 ### Local usage
 

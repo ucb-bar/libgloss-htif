@@ -1,14 +1,5 @@
+#include "asm.h"
 #include "encoding.h"
-
-#if __riscv_xlen == 64
-# define LREG ld
-# define SREG sd
-# define REGBYTES 8
-#else
-# define LREG lw
-# define SREG sw
-# define REGBYTES 4
-#endif
 
     .section .text.init
     .global _start
@@ -51,6 +42,47 @@ _start:
     li t0, (MSTATUS_FS | MSTATUS_XS)
     csrs mstatus, t0
 
+#ifdef __riscv_flen
+    /* Initialize FPU if present */
+    la t0, 1f
+    csrw mtvec, t0
+
+    fscsr zero
+    fmv.s.x f0,  zero
+    fmv.s.x f1,  zero
+    fmv.s.x f2,  zero
+    fmv.s.x f3,  zero
+    fmv.s.x f4,  zero
+    fmv.s.x f5,  zero
+    fmv.s.x f6,  zero
+    fmv.s.x f7,  zero
+    fmv.s.x f8,  zero
+    fmv.s.x f9,  zero
+    fmv.s.x f10, zero
+    fmv.s.x f11, zero
+    fmv.s.x f12, zero
+    fmv.s.x f13, zero
+    fmv.s.x f14, zero
+    fmv.s.x f15, zero
+    fmv.s.x f16, zero
+    fmv.s.x f17, zero
+    fmv.s.x f18, zero
+    fmv.s.x f19, zero
+    fmv.s.x f20, zero
+    fmv.s.x f21, zero
+    fmv.s.x f22, zero
+    fmv.s.x f23, zero
+    fmv.s.x f24, zero
+    fmv.s.x f25, zero
+    fmv.s.x f26, zero
+    fmv.s.x f27, zero
+    fmv.s.x f28, zero
+    fmv.s.x f29, zero
+    fmv.s.x f30, zero
+    fmv.s.x f31, zero
+1:
+#endif
+
     /* Initialize global pointer; disable relaxation to avoid relaxing
        the address calculation to "addi gp, gp, 0" */
     .option push
@@ -80,32 +112,25 @@ _start:
 
     /* Skip global initialization if not the designated boot hart */
     la t0, __boot_hart
-    la s1, __boot_sync
-    bne s0, t0, 1f
+    bne s0, t0, _start_secondary
+
+    /* Zero BSS segment */
+    la t0, __bss_start
+    la t1, __bss_end
+    bgeu t0, t1, 2f
+1:
+    SREG zero, (t0)
+    addi t0, t0, REGBYTES
+    bltu t0, t1, 1b
+2:
 
     /* Call global constructors */
     la a0, __libc_fini_array
     call atexit
     call __libc_init_array
 
-    /* Set __boot_sync flag */
-    li t0, -1
-    sw t0, (s1)
-
-    .macro enter func
-    li a0, 1    /* argc = 1 */
-    la a1, argv /* argv = { "chipyard", NULL } */
-    la a2, envp /* envp = { NULL } */
-    call \func
-    tail exit
-    .endm
-
-    enter main
-
-1:  /* Synchronize secondary harts */
-    lw t0, (s1)
-    beqz t0, 1b
-    enter __main
+    /* Call main function */
+    tail _start_main
 
     .cfi_endproc
 
@@ -195,18 +220,3 @@ trap_entry:
     LREG x2, 2*REGBYTES(sp)
 
     mret
-
-
-    .section .rodata
-    .align 3
-argv:
-    .dc.a name
-envp:
-    .dc.a 0
-name:
-    .asciz "chipyard"
-
-    .section .data
-    .align 2
-__boot_sync:
-    .word 0

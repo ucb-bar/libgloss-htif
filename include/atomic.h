@@ -13,69 +13,62 @@ static inline void local_irq_restore(unsigned long flags)
 {
 }
 
-static inline void mb(void)
-{
-    __asm__ __volatile__ ("fence" ::: "memory");
-}
 
-static inline void mb_acquire(void)
-{
-    __asm__ __volatile__ ("fence r, rw" ::: "memory");
-}
+#define fence(p, s) \
+    __asm__ __volatile__ ("fence " #p ", " #s : : : "memory")
 
-static inline void mb_release(void)
-{
-    __asm__ __volatile__ ("fence rw, w" ::: "memory");
-}
+static inline void mb(void) { fence(rw, rw); }
+static inline void rmb(void) { fence(r, r); }
+static inline void wmb(void) { fence(w, w); }
+static inline void mb_acquire(void) { fence(r, rw); }
+static inline void mb_release(void) { fence(rw, w); }
 
-typedef volatile int32_t atomic_t;
 
-static inline long atomic_read(const atomic_t *v)
+typedef int32_t atomic_t;
+
+static inline long atomic_load(const atomic_t *p)
 {
     /* FIXME: Elide redundant sext.w for volatile variables */
-    long r;
-    __asm__ __volatile__ (
-        "lw %0, %1"
-        : "=r" (r)
-        : "A" (*v));
-    return r;
+    return *((volatile const atomic_t *)p);
 }
 
-static inline void atomic_set(atomic_t *v, long n)
+static inline void atomic_store(atomic_t *p, atomic_t v)
 {
-    *v = n;
+    *((volatile atomic_t *)p) = v;
 }
 
-static inline long atomic_swap_acquire(atomic_t *v, long n)
+static inline long atomic_swap_acquire(atomic_t *p, atomic_t v)
 {
-    long r;
+    long n;
 #ifdef __riscv_atomic
     __asm__ __volatile__ (
         "amoswap.w.aq %0, %1, %2"
-        : "=r" (r)
-        : "r" (n), "A" (*v)
+        : "=r" (n)
+        : "r" (v), "A" (*p)
         : "memory");
 #else
     unsigned long flags;
     flags = local_irq_save();
-    r = atomic_read(v);
-    atomic_set(v, n);
+    n = atomic_load(p);
+    atomic_store(p, v);
     local_irq_restore(flags);
+    mb();
 #endif
-    return r;
+    return n;
 }
 
-static inline void atomic_clear_release(atomic_t *v)
+static inline void atomic_clear_release(atomic_t *p)
 {
 #ifdef __riscv_atomic
     __asm__ __volatile__ (
         "amoswap.w.rl x0, x0, %0"
-        :: "A" (*v) : "memory");
+        :
+        : "A" (*p)
+        : "memory");
 #else
-    atomic_set(v, 0);
     mb_release();
+    atomic_store(p, 0);
 #endif
 }
-
 
 #endif /* _CHIPYARD_ATOMIC_H */

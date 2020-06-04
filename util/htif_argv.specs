@@ -1,0 +1,7 @@
+%rename link htif_argv_link
+
+# Add code to retrieve argument vector from frontend server
+*link:
+%(htif_argv_link) \
+    --defsym=_start_main=_start_main_argv \
+    --defsym=_start_secondary=_start_secondary_argv

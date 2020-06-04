@@ -1,11 +1,6 @@
 #ifndef _CHIPYARD_SYSCALL_H
 #define _CHIPYARD_SYSCALL_H
 
-#include <stddef.h>
-#include <sys/types.h>
-
-#include "htif.h"
-
 /* Frontend system calls supported by fesvr */
 #define SYS_getcwd 17
 #define SYS_fcntl 25
@@ -30,27 +25,21 @@
 #define SYS_getmainvars 2011
 
 
-#define __SYSCALL_NARGS_X(a,b,c,d,e,f,g,...) g
-#define __SYSCALL_NARGS(...) \
-    __SYSCALL_NARGS_X(__VA_ARGS__,6,5,4,3,2,1,0,)
+#ifndef __ASSEMBLY__
 
-#define __SYSCALL_CONCAT_X(a, b) a ## b
-#define __SYSCALL_CONCAT(a, b) __SYSCALL_CONCAT_X(a, b)
+#include <stddef.h>
+#include <sys/types.h>
 
-#define __SYSCALL(n, ...) \
-    __SYSCALL_CONCAT(__syscall, __SYSCALL_NARGS(__VA_ARGS__))(n, __VA_ARGS__)
+#include "htif.h"
 
-static inline uintptr_t __syscall3(uint64_t num, uint64_t arg0, uint64_t arg1, uint64_t arg2)
-{
-    volatile uint64_t buf[8];
-    buf[0] = num;
-    buf[1] = arg0;
-    buf[2] = arg1;
-    buf[3] = arg2;
-    htif_syscall((uintptr_t)buf);
-    return buf[0];
-}
+#define SYSCALL1(n, a0) \
+    htif_syscall((a0), 0, 0, (n))
 
+#define SYSCALL2(n, a0, a1) \
+    htif_syscall((a0), (a1), 0, (n))
+
+#define SYSCALL3(n, a0, a1, a2) \
+    htif_syscall((a0), (a1), (a2), (n))
 
 struct stat;
 struct timespec;
@@ -73,7 +62,7 @@ extern int nanosleep(const struct timespec *, struct timespec *);
 extern int _getpid(void);
 extern int _fork(void);
 extern int _execve(const char *, char *const [], char *const []);
-extern void _exit(int);
+extern void _exit(int) __attribute__ ((noreturn));
 extern int _wait(int *);
 extern int _kill(int, int);
 extern char *_getcwd(char *, size_t);
@@ -91,5 +80,7 @@ extern int _ftime(struct timeb *);
 extern int _utime(const char *, const struct utimbuf *);
 extern long _sysconf(int);
 extern int _isatty(int);
+
+#endif /* !__ASSEMBLY__ */
 
 #endif /* _CHIPYARD_SYSCALL_H */
