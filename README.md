@@ -45,7 +45,7 @@ standard `-lgloss` are encapsulated in GCC spec files, along with a
 
 Spec File | Description
 --- | ---
-[`htif.specs`](util/htif.ld) | Link with newlib
+[`htif.specs`](util/htif.specs) | Link with newlib
 [`htif_nano.specs`](util/htif_nano.specs) | Link with newlib-nano
 [`htif_wrap.specs`](util/htif_wrap.specs) | Switch to minimal stdio implementation
 [`htif_argv.specs`](util/htif_argv.specs) | Retrieve `argv` from fesvr
@@ -79,6 +79,15 @@ For simple testing, it is possible to directly link against
 * Symlink [`htif.ld`](util/htif.ld) to the current working directory.
   (This bypasses a limitation where gcc searches only the default
   library path for the linker script, ignoring `-L`.)
+
+## Stack and heap sizes
+
+Override the `__stack_size_min` symbol to change the minimum stack
+size in bytes:\
+`-Wl,--defsym=__stack_size_min=$N`.
+
+Override the `__heap_size` symbol to change the heap size in bytes:\
+`-Wl,--defsym=__heap_size=$N`.
 
 ## Multi-threading
 
