@@ -2748,7 +2748,7 @@ if test "${enable_multilib+set}" = set; then :
   *) :
     for multilib in $enableval ; do
             case "$multilib" in #(
-  rv32?*-?*|rv64?*-?*) :
+  rv32?*/?*|rv64?*/?*) :
      ;; #(
   *) :
 
