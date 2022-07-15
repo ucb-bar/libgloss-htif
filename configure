@@ -2748,16 +2748,16 @@ if test "${enable_multilib+set}" = set; then :
   *) :
     for multilib in $enableval ; do
             case "$multilib" in #(
-  rv32?*-?*|rv64?*-?*) :
+  rv32?*/?*|rv64?*/?*) :
      ;; #(
   *) :
 
                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
 $as_echo "unknown" >&6; }
-                as_fn_error $? "illegal march-mabi value: ${multilib}" "$LINENO" 5
-                multilib="$enableval" ;;
+                as_fn_error $? "illegal march-mabi value: ${multilib}" "$LINENO" 5 ;;
 esac
-            done ;;
+            done ;
+            multilib="$enableval" ;;
 esac
 else
   multilib="`$CC -print-multi-lib | sed '/.*;@march=\(.*\)@mabi=\(.*\).*/{s//\1\/\2/;H;};$!d;x;s/\n/ /g'`"

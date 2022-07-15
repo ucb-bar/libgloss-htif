@@ -20,11 +20,11 @@ AC_ARG_ENABLE([multilib],
         [yes], [multilib="rv32i/ilp32 rv32iac/ilp32 rv32im/ilp32 rv32imac/ilp32 rv32imafc/ilp32f rv64imac/lp64 rv64imafdc/lp64d"],
         [no], [multilib=""],
         [for multilib in $enableval ; do
-            AS_CASE(["$multilib"], [rv32?*-?*|rv64?*-?*], [], [
+            AS_CASE(["$multilib"], [rv32?*/?*|rv64?*/?*], [], [
                 AC_MSG_RESULT([unknown])
-                AC_MSG_ERROR([illegal march-mabi value: ${multilib}])
-                multilib="$enableval"])
-            done])],
+                AC_MSG_ERROR([illegal march-mabi value: ${multilib}])])
+            done
+            multilib="$enableval"])],
     [multilib="`$CC -print-multi-lib | sed '/.*;@march=\(.*\)@mabi=\(.*\).*/{s//\1\/\2/;H;};$!d;x;s/\n/ /g'`"])
 
 AS_IF([test "x$multilib" != x],
