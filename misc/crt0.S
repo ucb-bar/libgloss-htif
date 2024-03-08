@@ -39,7 +39,7 @@ _start:
     li x30, 0
     li x31, 0
 
-    li t0, (MSTATUS_FS | MSTATUS_XS)
+    li t0, (MSTATUS_FS | MSTATUS_XS | MSTATUS_VS)
     csrs mstatus, t0
 
 #ifdef __riscv_flen
