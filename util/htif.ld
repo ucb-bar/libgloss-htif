@@ -111,7 +111,7 @@ SECTIONS
     }
 
     . = ALIGN (8);
-    PROVIDE (_end = .);
+    PROVIDE (__end = .);
 
     /* Reserve heap space */
     PROVIDE(__heap_size = 128K);
