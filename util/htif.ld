@@ -111,6 +111,7 @@ SECTIONS
     }
 
     . = ALIGN (8);
+    PROVIDE (_end = .);  /* to be compatible with riscv-pk */
     PROVIDE (__end = .);
 
     /* Reserve heap space */
