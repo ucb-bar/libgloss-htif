@@ -17,7 +17,7 @@ AC_ARG_ENABLE([multilib],
 [AS_HELP_STRING([--enable-multilib],
     [build libraries for multiple march/mabi combinations @<:@--disable-multilib@:>@])],
     [AS_CASE(["$enableval"],
-        [yes], [multilib="rv32i/ilp32 rv32iac/ilp32 rv32im/ilp32 rv32imac/ilp32 rv32imafc/ilp32f rv64imac/lp64 rv64imafdc/lp64d"],
+        [yes], [multilib="rv32i_zicsr_zifencei/ilp32 rv32iac_zicsr_zifencei/ilp32 rv32im_zicsr_zifencei/ilp32 rv32imac_zicsr_zifencei/ilp32 rv32imafc_zicsr_zifencei/ilp32f rv64imac_zicsr_zifencei/lp64 rv64imafdc_zicsr_zifencei/lp64d"],
         [no], [multilib=""],
         [for multilib in $enableval ; do
             AS_CASE(["$multilib"], [rv32?*/?*|rv64?*/?*], [], [
