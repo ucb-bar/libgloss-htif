@@ -2742,7 +2742,7 @@ $as_echo_n "checking whether multilib is enabled... " >&6; }
 if test "${enable_multilib+set}" = set; then :
   enableval=$enable_multilib; case "$enableval" in #(
   yes) :
-    multilib="rv32i_zicsr_zifencei/ilp32 rv32iac_zicsr_zifencei/ilp32 rv32im_zicsr_zifencei/ilp32 rv32imac_zicsr_zifencei/ilp32 rv32imafc_zicsr_zifencei/ilp32f rv64imac_zicsr_zifencei/lp64 rv64imafdc_zicsr_zifencei/lp64d"
+    multilib="rv32i_zicsr_zifencei/ilp32 rv32iac_zicsr_zifencei/ilp32 rv32im_zicsr_zifencei/ilp32 rv32imac_zicsr_zifencei/ilp32 rv32imafc_zicsr_zifencei/ilp32f rv64imac_zicsr_zifencei/lp64 rv64imafdc_zicsr_zifencei/lp64d" ;;
   no) :
     multilib="" ;; #(
   *) :
